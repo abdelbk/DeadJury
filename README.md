@@ -16,7 +16,7 @@ Let's assume that the players are <em>Bob</em> and <em>Alice</em><br>
 &nbsp;&nbsp;&nbsp;&nbsp;*The players exchange their guesses*<br>
 *Alice* sees that the clever *Bob* guessed **2** digits : *5* and *7*<br>
 In addition, *5* is at the same position of *Alice*'s number => We say that *5* is dead<br>
-On the other hand, *7* is not in the same position => We say that *7* is injured<br>
+On the other hand, *7* is not at the same position => We say that *7* is injured<br>
 So *Alice* has **1** dead and **1** injured<br>
 **Bob will follow the same reasonning and so on**
 ##Have fun and be the best !!

@@ -91,8 +91,8 @@ echo json_encode($json);
 /**
  * Gets the file associated to a player
  *
- * @param string $gameId, the Id of the game
- * @param string $playerId, the Id of the player
+ * @param string $game, the Id of the game
+ * @param string $player, the Id of the player
  * @param string $number, the number chosen by the player
  *
  * @return string|false

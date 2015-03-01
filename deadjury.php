@@ -4,7 +4,7 @@ define('DEADJURY_FILES_PREFIX', 'deadjury-game-');
 if(isset($_POST['reset']))
 {
     $game = $_POST['game'];
-    foreach(glob('{'.DEADJURY_FILES_PREFIX'}'.$game.'*txt', GLOB_BRACE) as $filename)
+    foreach(glob('{'.DEADJURY_FILES_PREFIX.$game.'-}*txt', GLOB_BRACE) as $filename)
     {
         unlink($filename);
     }

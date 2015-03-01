@@ -1,0 +1,304 @@
+<html>
+    <head>
+        <title>DeadJury</title>
+        <meta charset="utf-8">
+        <link rel="stylesheet" type="text/css" href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.2/css/bootstrap.min.css">
+        <link href='http://fonts.googleapis.com/css?family=Open+Sans+Condensed:700,300' rel='stylesheet' type='text/css'>
+        <script src="http://fb.me/react-0.12.2.js"></script>
+        <script src="http://fb.me/JSXTransformer-0.12.2.js"></script>
+        <script src="http://code.jquery.com/jquery-1.10.0.min.js"></script>
+        <script src="//maxcdn.bootstrapcdn.com/bootstrap/3.3.2/js/bootstrap.min.js"></script>
+        <style type="text/css">
+            body {
+                font-family: 'Open Sans Condensed', sans-serif;
+            }
+            #game {
+                position: relative;
+                width: 50%;
+                margin: 0 auto;
+                margin-top: 50px;
+                background-color: #CFC4C2;
+                border-radius: 5px;
+            }
+            #end-game {
+                display: none;
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                opacity: 0.6;
+            }
+            #end-game.winner {
+                background-color: #60D67E;
+            }
+            #end-game.loser {
+                background-color: #F5543B;
+            }
+            #end-game p {
+                font-weight: bold;
+                font-size: 40px;
+            }
+        </style>
+    </head>
+    <body>
+        <div id="content"></div>
+        <div class="container-fluid" id="game"></div>
+        <script type="text/jsx">
+            var DeadJury = React.createClass({
+                getDefaultProps : function() {
+                    return  {
+                        invalidNumberMessage : "Vous devez choisir un nombre avec 4 chiffres différents !",
+                        startGuessingMessage : "Devinez le nombre ! Allez-y, vous êtes un génie !",
+                        waitMessage          : "Attendez que votre adversaire finisse son tour...",
+                        winMessage           : "Vous avez gagné !! Une légende...",
+                        lossMessage          : ":( Dommage, vous avez perdu...",
+                        winCls               : "winner",
+                        lossCls              : "loser"
+                    };
+                },
+                loadGuess : function() {
+                    var guesses = this.state.guesses,
+                        me      = this;
+                    $.get(this.props.url, {
+                        game   : me.state.game,
+                        player : me.state.player,
+                        number : me.props.number,
+                    }, function(data) {
+                        if(data.response == 1) {
+                            var guesses = me.state.guesses.concat([data.results]);
+                            if(Number(data.allowed) && me.state.canGuess !== true) {
+                                me.setState({guesses : guesses, canGuess : true, feedBackMessage : me.props.startGuessingMessage});
+                            }
+                            if(typeof data.winner !== "undefined") me.handleEndGame(data.winner);
+                        }
+                    }, 'json');
+                },
+                handleModalSubmit : function(number) {
+                    if(this.isValidNumber(number)) {
+                        this.props.number = number;
+                        $(".modal").modal("hide");
+                    } else {
+                        alert(this.props.invalidNumberMessage);
+                    }
+                },
+                handleNumberSubmit : function(guess, input) {
+                    var me = this;
+                    if(this.isValidNumber(guess)) {
+                        input.value = "";
+                        input.setAttribute("disabled", "disabled");
+                        if(this.state.canGuess) {
+                            $.post(this.props.url, {
+                                game   : this.state.game,
+                                player : this.state.player,
+                                guess  : guess,
+                                number : this.props.number
+                            }, function(data) {
+                                me.setState({canGuess : false, feedBackMessage : me.props.waitMessage});
+                                if(data.response == 1 && typeof data.game !== "undefined") {
+                                    me.setState({game : data.game, player : data.player});
+                                }
+                            }, "json");
+                        }
+                    } else {
+                        alert(this.props.invalidNumberMessage);
+                    }
+                },
+                handleResetSubmit : function() {
+                    var me = this;
+                    $.post(this.props.url, {reset : true}, function(data) {
+                        if(data.response == 1) {
+                            me.replaceState(me.getInitialState());
+                            $(".modal").modal("show");
+                        }
+                    }, "json");
+                },
+                handleEndGame : function(winner) {
+                    if(winner == this.props.number) {
+                        this.setState({end : true, endMessage : this.props.winMessage, endCls : this.props.winCls});
+                    } else {
+                        this.setState({end : true, endMessage : this.props.lossMessage, endCls : this.props.lossCls, winner : winner});
+                    }
+                },
+                isValidNumber : function(input) {
+                    return input.length == 4 && !/([1-9])(?=([1-9]+)?\1)/g.test(input);
+                },
+                getInitialState: function() {
+                    return {
+                        game     : '',
+                        player   : '',
+                        guesses  : [],
+                        canGuess : true,
+                        end      : false,
+                        winner   : false,
+                        feedBackMessage : this.props.startGuessingMessage,
+                        endMessage : "",
+                        endCls     : ""
+                    };
+                },
+                componentDidMount: function() {
+                    this.loadGuess();
+                    setInterval(this.loadGuess, this.props.pollInterval);
+                },
+                render : function() {
+                    return (
+                        <div id="deadjury-container">
+                            <ResetGame onResetGameSubmit={this.handleResetSubmit}/>
+                            <h1 className="text-center">
+                                <strong>DeadJury</strong>
+                            </h1>
+                            <FeedBack feedBackMessage={this.state.feedBackMessage} />
+                            <NumberForm onNumberSubmit={this.handleNumberSubmit} enabled={this.state.canGuess} />
+                            <GuessesTable guesses={this.state.guesses} />
+                            <GuessModal onModalSubmit={this.handleModalSubmit} />
+                            <EndGame endCls={this.state.endCls} endMessage={this.state.endMessage} end={this.state.end} winner={this.state.winner} />
+                        </div>
+                    );
+                }
+            });
+            var NumberForm = React.createClass({
+                handleSubmit : function(e) {
+                    e.preventDefault();
+                    var input  = this.refs.number.getDOMNode(),
+                        number = input.value.trim();
+                    this.props.onNumberSubmit(number, input);
+                },
+                componentDidUpdate : function() {
+                    var input  = this.refs.number.getDOMNode();
+                    if(this.props.enabled === true) {
+                        input.removeAttribute("disabled");
+                        input.focus();
+                    }
+                },
+                render : function() {
+                    return (
+                        <form onSubmit={this.handleSubmit}>
+                            <div className="form-group col-md-6 col-md-offset-3">
+                                <input type="text" className="form-control" placeholder="Entrez un nombre à 4 chiffres" ref="number" />
+                            </div>
+                        </form>
+                    );
+                }
+            });
+            var GuessesTable = React.createClass({
+                render : function() {
+                    var guesses = this.props.guesses.map(function(guess) {
+                        return (
+                            <Guess number={guess.number} dead={guess.dead} injured={guess.injured}></Guess>
+                        );
+                    });
+                    return (
+                        <table className="table table-striped">
+                            <thead>
+                                <tr>
+                                    <td>Nombre</td>
+                                    <td>Blessés</td>
+                                    <td>Morts</td>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {guesses}
+                            </tbody>
+                        </table>
+                    );
+                }
+            });
+            var Guess = React.createClass({
+                render : function() {
+                    var trStyle    = {fontSize : "20px"},
+                        injuredCls = "text-" + (this.props.injured > 0 ? "primary" : "danger"),
+                        deadCls    = "text-" + (this.props.dead > 0 ? "success" : "danger");
+                    return (
+                        <tr style={trStyle}>
+                            <td>{this.props.number}</td>
+                            <td><strong className={injuredCls}>{this.props.injured}</strong></td>
+                            <td><strong className={deadCls}>{this.props.dead}</strong></td>
+                        </tr>
+                    );
+                }
+            });
+            var GuessModal = React.createClass({
+                handleSubmit : function() {
+                    var number = this.refs.number.getDOMNode().value.trim();
+                    this.props.onModalSubmit(number);
+                },
+                handleKeyPress : function(e) {
+                    if(e.charCode == 13) this.handleSubmit();
+                },
+                componentDidMount : function() {
+                    $(".modal").modal("show");
+                },
+                render : function() {
+                    return (
+                        <div className="modal fade">
+                            <div className="modal-dialog">
+                                <div className="modal-content">
+                                    <div className="modal-header">
+                                        <h4 className="modal-title">Choisissez un nombre</h4>
+                                    </div>
+                                    <div className="modal-body">
+                                        <input onKeyPress={this.handleKeyPress} type="text" className="form-control" placeholder="Entrez un nombre à 4 chiffres" ref="number" />
+                                    </div>
+                                    <div className="modal-footer">
+                                        <button onClick={this.handleSubmit} type="button" className="btn btn-primary">Commencer !!</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    );
+                }
+            });
+            var FeedBack = React.createClass({
+                render : function() {
+                    return (
+                        <div className="alert alert-info" role="alert">
+                            <strong>{this.props.feedBackMessage}</strong>
+                        </div>
+                    );
+                }
+            });
+            var EndGame = React.createClass({
+                componentDidUpdate : function() {
+                    if(this.props.end) {
+                        var element = this.getDOMNode();
+                        $(element).fadeIn();
+                    }
+                },
+                render : function() {
+                    var pStyle = {marginTop : "90px"};
+                    return (
+                        <div className={this.props.endCls} id="end-game">
+                            <p style={pStyle} className="text-center">{this.props.endMessage}</p>
+                            { this.props.winner ? <p className="text-center">Voici le nombre : {this.props.winner}</p> : "" }
+                        </div>
+                    );
+                }
+            });
+            var ResetGame = React.createClass({
+                getDefaultProps : function() {
+                    return {
+                        confirmResetMessage : "Voulez-vous vraiment réinitialiser le jeu ?"
+                    };
+                },
+                handleSubmit : function(e) {
+                    e.preventDefault();
+                    if(confirm(this.props.confirmResetMessage)) {
+                        this.props.onResetGameSubmit();
+                    }
+                },
+                render : function() {
+                    return (
+                        <form onSubmit={this.handleSubmit}>
+                            <button className="btn btn-sm btn-danger pull-right">Recommencer</button>
+                        </form>
+                    );
+                }
+            });
+
+            React.render(
+                <DeadJury url="deadjury.php" pollInterval={4000}/>,
+                document.getElementById("game")
+            );
+        </script>
+    </body>
+</html>

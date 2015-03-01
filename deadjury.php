@@ -1,8 +1,11 @@
 <?php
 define('DEADJURY_FILES_PREFIX', 'deadjury-game-');
 
-if(isset($_POST['reset'])) {
-    foreach(glob('*.txt') as $filename) {
+if(isset($_POST['reset']))
+{
+    $game = $_POST['game'];
+    foreach(glob('{'.DEADJURY_FILES_PREFIX'}'.$game.'*txt', GLOB_BRACE) as $filename)
+    {
         unlink($filename);
     }
     $json['response'] = 1;
@@ -222,7 +225,6 @@ function compare($guess, $to)
     }
 
     return array(
-        'number'  => $guess,
         'dead'    => $dead,
         'injured' => $injured
     );

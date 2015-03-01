@@ -106,7 +106,7 @@
                 },
                 handleResetSubmit : function() {
                     var me = this;
-                    $.post(this.props.url, {reset : true}, function(data) {
+                    $.post(this.props.url, {reset : true, game : me.state.game}, function(data) {
                         if(data.response == 1) {
                             me.replaceState(me.getInitialState());
                             $(".modal").modal("show");

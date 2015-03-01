@@ -19,6 +19,6 @@ In addition, *5* is at the same position of *Alice*'s number => We say that *5* 
 In the other hand, *7* is not in the same position => We say that *7* is injured<br>
 So *Alice* has **1** dead and **1** injured<br>
 **Bob will follow the same reasonning and so on**
-##Have fun and be the GURU !!
+##Have fun and be the best !!
 
 

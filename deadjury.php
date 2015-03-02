@@ -89,7 +89,7 @@ echo json_encode($json);
 ***************************************/
 
 /**
- * Gets the file associated to a player
+ * Gets the file associated with a player
  *
  * @param string $game, the Id of the game
  * @param string $player, the Id of the player
@@ -231,7 +231,7 @@ function compare($guess, $to)
 }
 
 /**
- * Creates the file associated to a given player
+ * Creates the file associated with a given player
  * deadjury-game-[gameId]-[playerId]-[chosenNumber].txt
  *
  * @param string $guess, the number guessed by the player

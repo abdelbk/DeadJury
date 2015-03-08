@@ -38,10 +38,6 @@ elseif(isset($_POST['guess']))
             $json['response'] = 1;
         }
     }
-    if(!isset($json))
-    {
-        $json['response'] = 0;
-    }
 }
 elseif(isset($_GET['number']))
 {
